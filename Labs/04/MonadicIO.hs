@@ -20,8 +20,8 @@ instance Monad MIO where
     (a, w') -> mio (fm a) w'
   return a = MIO $ \w -> (a, w)
 
-mgetchar :: MIO Char
-mgetchar = return $ igetchar ()
+mgetchar :: () -> MIO Char
+mgetchar () = return $ igetchar ()
 
 mputchar :: Char -> MIO ()
 mputchar c = case iputchar c of
@@ -56,11 +56,12 @@ runDIO = runCont . dio
 mputstring :: String -> MIO ()
 mputstring = foldr ((>>) . mputchar) (return ())
 
-mcopyin :: MIO ()
-mcopyin = do
-  c <- mgetchar
+-- FIXME there should be no unit since World serves as one
+mcopyin :: () -> MIO ()
+mcopyin () = do
+  c <- mgetchar ()
   mputchar c
-  unless (c == '\0') mcopyin
+  unless (c == '\0') $ mcopyin ()
 
 dputstring :: String -> DIO ()
 dputstring = foldr ((>>) . dputchar) (return ())
@@ -74,7 +75,7 @@ dcopyin = do
 main :: IO ()
 --main = runMIO $ mputstring "Hello\n"
 --FIXME Impure version is not working
-main = runMIO mcopyin
+main = runMIO $ mcopyin ()
 --main = runDIO $ dputstring "Hello\n"
 --main = runDIO dcopyin
 
